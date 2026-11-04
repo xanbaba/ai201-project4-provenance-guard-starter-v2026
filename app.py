@@ -173,7 +173,7 @@ def submit():
     content_id = str(uuid.uuid4())
     style_score = stylometry.style_signal(payload["text"])
     confidence = scoring.combine_signals(model_score, style_score)
-    guess, label = "unsure", "Scoring is not complete yet."
+    guess, label = scoring.score_to_label(confidence)
     audit.log_decision(content_id, payload["creator_id"], guess=guess, model_score=model_score, style_score=style_score,
                        combined_score=confidence, label=label)
     return jsonify(content_id=content_id, guess=guess, confidence=confidence,
@@ -183,35 +183,28 @@ def submit():
 
 @app.post("/appeal")
 def appeal():
-    """
-    A writer says you got it wrong. ← TODO — Milestone 5
-
-    Expects JSON:
-        {"content_id": "...", "reasoning": "..."}
-
-    Should:
-      1. Check the content_id actually exists — `audit.entries_for(id)` tells
-         you. A typo here fails silently and looks like a broken endpoint,
-         which is the single most common way this milestone eats an hour.
-      2. Record the appeal with `audit.log_appeal(...)`, which moves the item
-         to `under_review`.
-      3. Confirm to the writer. No automatic re-checking needed.
-
-    This is the smallest endpoint in the project and the one that matters most
-    to the person on the other end. It's the only thing standing between a
-    wrong accusation and nothing at all.
-    """
-    payload = request.get_json(silent=True) or {}
-
-    # TODO: delete this and build the route.
-    return jsonify({
-        "error": "not_implemented",
-        "message": "POST /appeal isn't built yet — see the TODO in app.py.",
-        "you_sent": payload,
-    }), 501
+    """Append an appeal and mark the item under review in the log."""
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify(error="invalid_input", message="Expected a JSON object."), 400
+    for field, limit in (("content_id", 200), ("reasoning", 10000)):
+        value = payload.get(field)
+        if not isinstance(value, str) or not value.strip() or len(value) > limit:
+            return jsonify(error="invalid_input", message=f"{field} must be a non-blank string of at most {limit} characters."), 400
+    entries = audit.entries_for(payload["content_id"])
+    decision = next((entry for entry in entries if entry.get("guess") is not None), None)
+    if decision is None:
+        return jsonify(error="not_found", message="Content ID not found."), 404
+    audit.log_appeal(payload["content_id"], decision["creator_id"], payload["reasoning"])
+    return jsonify(content_id=payload["content_id"], status="under_review",
+                   message="Your appeal has been recorded for review.")
 
 
-# ── Already works ─────────────────────────────────────────────────────────────
+@app.errorhandler(500)
+def internal_error(error):
+    """Keep unexpected failures in the same JSON error format."""
+    return jsonify(error="internal_error", message="The request could not be completed."), 500
+
 
 @app.get("/log")
 def get_log():
