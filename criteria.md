@@ -42,63 +42,43 @@ Two things worth knowing before you pick numbers:
   a **miss**.
 
 ---
-## 1.
+## 1. False positives on my writing
 
-<!-- Your criterion. It must name a number. -->
+In each of three trials, submit the same 10 different pieces I wrote myself, including at least two written in a plain style. At most one of the 10 may receive the `ai` guess in each trial.
 
-
-
-**Why this target:**
-
-
+**Why this target:** A false accusation can harm a writer's trust and reputation, so I want a low tolerance for it, including for people who write simply. Ten pieces are a small sample, so meeting this target would not establish a real-world false-positive rate.
 
 ---
 
-## 2.
+## 2. Score separation
 
-<!-- Your criterion. -->
+Before running the evaluation, select 10 known AI-generated pieces and 10 different pieces I wrote myself. In each of three trials, the mean `confidence` score for the AI set must be at least 0.15 higher than the mean for the human set. Use the same pieces in each trial.
 
-
-
-**Why this target:**
-
-
+**Why this target:** The score should show a meaningful difference between the two groups, while allowing individual pieces to overlap. This measures separation on the chosen examples, not accuracy on all writing.
 
 ---
 
-## 3.
+## 3. All three labels are reachable
 
-<!-- Your criterion. -->
+Select a fixed set of no more than 30 valid pieces before the evaluation. In each of three trials, submissions from that set must produce all three guesses: `human`, `unsure`, and `ai`. Each response's label must match the exact text and score range documented in the README.
 
-
-
-**Why this target:**
-
-
+**Why this target:** A label that only exists in the mapping but cannot be reached by actual submissions does not give readers the intended range of outcomes. Checking the response text and range also catches mismatches between the contract and the implementation.
 
 ---
 
-## 4.
+## 4. Appeals are recorded and put under review
 
-<!-- Your criterion. -->
+In each of three trials, submit five valid pieces and appeal each returned content ID with a distinct non-empty reason. All five appeals must return HTTP 200 and `under_review`; the audit log must retain each original decision and contain a later appeal entry with the matching content ID, exact reason, and `under_review` status.
 
-
-
-**Why this target:**
-
-
+**Why this target:** A writer needs a reliable way to challenge a decision, and reviewers need both the original decision and the writer's explanation. Five separate appeals test that the link works for more than one item.
 
 ---
 
-## 5.
+## 5. Invalid submission input is rejected
 
-<!-- Your criterion. -->
+In each of three trials, send these five JSON objects to `/submit`, each with a valid `creator_id`: one missing `text`, one with `text` set to an empty string, one with whitespace only, one with `text` set to `null`, and one with a 10,001-character text string. All five must return HTTP 400 with `error` equal to `invalid_input`, and none may create a decision entry in the audit log.
 
-
-
-**Why this target:**
-
-
+**Why this target:** Rejecting malformed or oversized input makes the endpoint predictable and prevents invalid material from being treated as a completed decision. The length case checks the boundary specified in the endpoint contract.
 
 ---
 
