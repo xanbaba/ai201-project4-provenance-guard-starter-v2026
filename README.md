@@ -114,18 +114,27 @@ For either endpoint, invalid JSON, a non-object body, missing fields, wrong type
 <!-- Write the rule in words, then give the numbers. What happens when the two
      signals disagree? -->
 
-**The rule:**
+**The rule:** Take a weighted average of the two AI-likelihood signals. When they disagree, the average falls between them; a high style score alone cannot determine an AI label.
 
-**The numbers:**
+**The numbers:** Model 0.80; style 0.20. These are initial design choices, not weights learned or validated against an authorship dataset. The broad unsure band reduces confident labels, including false accusations.
 
 **Where it lives:** `scoring.py::combine_signals`
 
 <!-- ⚠️ The grader checks your code against that line. If your rule lives
      somewhere else, say where. -->
 
-**A case where my two signals split, and what my rule does with it:**
+**A case where my two signals split, and what my rule does with it:** An excerpt from the human-written Declaration of Independence scored 0.9944 on the model and 0.4699 on style. The weighted result was 0.8895, which falls in the proposed AI band: a real false positive on this example. Model weighting overwhelms the disagreement; the broad band does not prevent every accusation.
 
+Calibration on four short examples (scores from one run, not an accuracy study):
 
+| Text | Model | Style | Combined |
+|---|---:|---:|---:|
+| Assistant-generated general paragraph | 0.7003 | 0.6078 | 0.6818 |
+| Human: adapted opening of *Moby-Dick* | 0.3169 | 0.2902 | 0.3116 |
+| Human: Declaration of Independence excerpt | 0.9944 | 0.4699 | 0.8895 |
+| Lightly edited assistant-generated paragraph | 0.5576 | 0.5264 | 0.5514 |
+
+The style signal uses population standard deviation divided by mean sentence length, unique words divided by all words, and punctuation characters divided by all characters. It combines 40% of `1 - min(spread / 0.8, 1)`, 30% of `1 - word variety`, and 30% of `1 - min(punctuation density / 0.12, 1)`. For fewer than two sentences the spread component is neutral (0.5). Lower variation, variety, or density increases this heuristic score; none establishes authorship.
 
 ---
 

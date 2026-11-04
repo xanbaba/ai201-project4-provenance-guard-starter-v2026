@@ -1,33 +1,7 @@
-"""
-Signal two: the style signal. ← YOU BUILD THIS IN MILESTONE 4
+"""Surface statistics for the style signal, not evidence of authorship.
 
-Signal one reads the text for meaning. This one measures it *as text* — the
-shape of it, without understanding a word.
-
-Three measures are stubbed below because the brief names those three. They are
-stubs, not implementations: what they compute is yours, and so is how you
-combine them.
-
-    sentence_length_spread   do sentences vary in length, or march in step?
-    type_token_ratio         how much of the vocabulary repeats?
-    punctuation_density      how much punctuation, and how varied?
-
-Why these might differ between human and AI writing: generated prose tends
-toward even, mid-length sentences and a narrower band of vocabulary, because
-that's what "most likely next word" produces on average. Human writing is
-lumpier — a three-word sentence next to a forty-word one.
-
-⚠️ **The blind spot, which you have to name in Milestone 1.**
-
-This signal cannot read. It has no idea what the text says. Anything that
-changes the shape without changing the substance moves it — adding typos,
-breaking up sentences, pasting in a quotation. That is a very cheap thing for
-someone to do on purpose, and unit 8's attack set will do it to you.
-
-Build each function on its own and call it from a terminal before you wire
-anything together:
-
-    python stylometry.py "some text to look at"
+The score combines normalized sentence-length variation, word diversity, and
+punctuation density. Short texts and changes in genre or editing can distort it.
 """
 
 import re
@@ -64,8 +38,11 @@ def sentence_length_spread(text: str) -> float:
     `stdev` raises on fewer than two values. Decide what that should return
     before the attack set decides for you.
     """
-    # TODO: replace this
-    return 0.0
+    lengths = [len(words(sentence)) for sentence in sentences(text)]
+    lengths = [length for length in lengths if length]
+    if len(lengths) < 2:
+        return 0.0
+    return statistics.pstdev(lengths) / statistics.mean(lengths)
 
 
 def type_token_ratio(text: str) -> float:
@@ -80,8 +57,8 @@ def type_token_ratio(text: str) -> float:
     directly comparable on it, and if your test inputs vary a lot in length,
     that alone can look like a signal.
     """
-    # TODO: replace this
-    return 0.0
+    tokens = words(text)
+    return len(set(tokens)) / len(tokens) if tokens else 0.0
 
 
 def punctuation_density(text: str) -> float:
@@ -94,8 +71,7 @@ def punctuation_density(text: str) -> float:
         more interesting than full stops, because they vary more between
         writers.
     """
-    # TODO: replace this
-    return 0.0
+    return sum(1 for char in text if char in ".,;:!???-") / len(text) if text else 0.0
 
 
 # ── Combining them ───────────────────────────────────────────────────────────
@@ -122,8 +98,11 @@ def style_signal(text: str) -> float:
     you trust it. Plain and ordinary, not formal: formal prose reads as *human*
     to signal one, and it is plain writing that gets accused.
     """
-    # TODO: replace this
-    return 0.5
+    # Missing sentence variation is unknown, not evidence of machine authorship.
+    spread_component = 0.5 if len(sentences(text)) < 2 else 1 - min(sentence_length_spread(text) / 0.8, 1)
+    diversity_component = 1 - type_token_ratio(text)
+    punctuation_component = 1 - min(punctuation_density(text) / 0.12, 1)
+    return round(0.4 * spread_component + 0.3 * diversity_component + 0.3 * punctuation_component, 4)
 
 
 if __name__ == "__main__":

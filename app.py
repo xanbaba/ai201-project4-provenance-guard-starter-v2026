@@ -31,6 +31,8 @@ from flask import Flask, jsonify, request
 import audit
 import config
 import detector
+import stylometry
+import scoring
 
 app = Flask(__name__)
 
@@ -169,11 +171,13 @@ def submit():
     except detector.DetectorUnavailable:
         return jsonify(error="detector_unavailable", message="Detector is unavailable."), 503
     content_id = str(uuid.uuid4())
-    guess, confidence, label = "unsure", 0.5, "Scoring is not complete yet."
-    audit.log_decision(content_id, payload["creator_id"], guess=guess, model_score=model_score,
+    style_score = stylometry.style_signal(payload["text"])
+    confidence = scoring.combine_signals(model_score, style_score)
+    guess, label = "unsure", "Scoring is not complete yet."
+    audit.log_decision(content_id, payload["creator_id"], guess=guess, model_score=model_score, style_score=style_score,
                        combined_score=confidence, label=label)
     return jsonify(content_id=content_id, guess=guess, confidence=confidence,
-                   label=label, model_score=model_score)
+                   label=label, model_score=model_score, style_score=style_score)
 
 
 
