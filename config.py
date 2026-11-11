@@ -70,9 +70,9 @@ WEIGHT_STYLE_SIGNAL = 0.2
 HUMAN_THRESHOLD = 0.15
 AI_THRESHOLD = 0.85
 
-# Rate limiting is off until Unit 8.
+# Enabled for Unit 8; the environment override supports isolated contract tests.
 
-RATE_LIMITING_ENABLED = os.getenv("AI201_RATE_LIMITS", "0") == "1"
+RATE_LIMITING_ENABLED = os.getenv("AI201_RATE_LIMITS", "1") == "1"
 
 RATE_LIMIT_PER_MINUTE = 10
 RATE_LIMIT_PER_DAY = 200

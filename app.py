@@ -154,21 +154,25 @@ def health():
 # ── Submission and appeal ────────────────────────────────────────────────────
 
 @app.post("/submit")
-# @limiter.limit(f"{config.RATE_LIMIT_PER_MINUTE}/minute;{config.RATE_LIMIT_PER_DAY}/day")
+@limiter.limit(f"{config.RATE_LIMIT_PER_MINUTE}/minute;{config.RATE_LIMIT_PER_DAY}/day")
 def submit():
     """Validate a submission, score it, and record the decision."""
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
+        audit.log_rejection("unknown", "invalid_input", message="Expected a JSON object.")
         return jsonify(error="invalid_input", message="Expected a JSON object."), 400
     for field, limit in (("text", 10000), ("creator_id", 200)):
         value = payload.get(field)
         if not isinstance(value, str) or not value.strip() or len(value) > limit:
+            audit.log_rejection(payload.get("creator_id", "unknown"), "invalid_input", field=field)
             return jsonify(error="invalid_input", message=f"{field} must be a non-blank string of at most {limit} characters."), 400
     try:
         model_score = detector.model_signal(payload["text"])
     except ValueError:
+        audit.log_rejection(payload["creator_id"], "invalid_input", field="text", detail="fewer_than_three_tokens")
         return jsonify(error="invalid_input", message="text must contain at least three model tokens."), 400
     except detector.DetectorUnavailable:
+        audit.log_rejection(payload["creator_id"], "detector_unavailable")
         return jsonify(error="detector_unavailable", message="Detector is unavailable."), 503
     content_id = str(uuid.uuid4())
     style_score = stylometry.style_signal(payload["text"])

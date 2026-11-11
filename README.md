@@ -251,25 +251,19 @@ $ curl "http://127.0.0.1:5000/log?limit=2"
 
 ## Rate Limiting
 
-**My limits:** ___ per minute, ___ per day
+**My limits:** 10 per minute, 200 per day
 
-**Why those numbers and not others:**
-<!-- Think about two people: a real writer submitting their own work a few
-     times an hour, and a script sending a thousand variations to map your
-     thresholds. Your numbers have to be liveable for the first and hostile to
-     the second. -->
+**Why those numbers and not others:** Ten submissions per minute allows ordinary revisions but constrains rapid threshold probing. Two hundred per day allows occasional intensive use while limiting sustained probing by one claimed identity. These are initial operational limits, not measured production capacity.
 
-**What a caller counts as:** <!-- per address, or per creator_id? They fail
-differently — one script can look like a thousand callers, and one household
-can look like one. -->
+**Stretch feature declared before implementation:** Per-creator limits, using the existing starter key function. A non-blank string `creator_id` is the key; other requests fall back to their address. Separate writers at one address can use separate budgets, but changing an unauthenticated creator ID bypasses the per-creator limit. In-memory counters reset on restart and are not shared across workers.
 
 **The run of status codes when I pushed past it:**
 
-<!-- python run_attacks.py --flood 15 -->
-
+```text
+200 200 200 200 200 200 200 200 200 200 429 429 429 429 429
 ```
 
-```
+The detector was warmed before this 15-request burst. Five rejections were recorded; the complete console output, server log, audit extract, and source/configuration manifest are preserved in `results/`.
 
 ---
 
