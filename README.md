@@ -123,7 +123,7 @@ For either endpoint, invalid JSON, a non-object body, missing fields, wrong type
 <!-- ⚠️ The grader checks your code against that line. If your rule lives
      somewhere else, say where. -->
 
-**A case where my two signals split, and what my rule does with it:** An excerpt from the human-written Declaration of Independence scored 0.9944 on the model and 0.4699 on style. The weighted result was 0.8895, which falls in the AI band: a real false positive on this example. Model weighting overwhelms the disagreement; the broad band does not prevent every accusation.
+**A case where my two signals split, and what my rule does with it:** An excerpt from the human-written Declaration of Independence scored 0.9944 on the model and 0.4699 on style. The weighted result was 0.8895, which fell in the original 0.85 AI band: a real false positive on this example. Model weighting overwhelms the disagreement; the broad band does not prevent every accusation.
 
 Calibration on four short examples (scores from one run, not an accuracy study):
 
@@ -155,7 +155,7 @@ These are the current Part 2 ranges. The original Part 1 AI cutoff was 0.85; its
 
 **Why I worded the "unsure" one this way:** It states the uncertainty without accusing the writer and tells them that an appeal is available.
 
-All three labels were returned by live submissions. The human-band input was an artificial rare-word sentence, the unsure input was an assistant-generated paragraph, and the AI-band input was a human-written Declaration of Independence excerpt. This establishes reachability for those inputs, not reliable authorship detection. The full three-trial acceptance evaluation, including the user's own writing, remains for Unit 8.
+At the original 0.85 AI cutoff, all three labels were returned by live submissions. The human-band input was an artificial rare-word sentence, the unsure input was an assistant-generated paragraph, and the AI-band input was a human-written Declaration of Independence excerpt. This establishes reachability for those inputs, not reliable authorship detection. Part 2 below records the later three-trial experiment and its corpus limitations.
 
 ---
 
@@ -245,157 +245,526 @@ $ curl "http://127.0.0.1:5000/log?limit=2"
 
 **Moment 2:** I asked it to finish the remaining milestones. It implemented the two-signal service and appeal path, ran the model and endpoint checks, and recorded the false positive on the Declaration of Independence excerpt in the scoring discussion above.
 
-<!-- ═══════════════════════ UNIT 8 — THE TEST ═══════════════════════ -->
-
----
+**Part 2 AI-use update:** I asked the assistant to implement the planned instrumentation, harness, and experiment. It preserved raw responses, calculated the trial metrics, diagnosed failures, and measured the single threshold change. The resulting write-up retains the coverage regression and distinguishes fixture metrics from unverified authorship claims.
 
 ## Rate Limiting
 
-**My limits:** 10 per minute, 200 per day
+**Limits:** 10 submissions per minute and 200 per day on `/submit`.
 
-**Why those numbers and not others:** Ten submissions per minute allows ordinary revisions but constrains rapid threshold probing. Two hundred per day allows occasional intensive use while limiting sustained probing by one claimed identity. These are initial operational limits, not measured production capacity.
+Ten per minute permits ordinary revisions while constraining rapid threshold probing; 200 per day limits sustained use by one claimed identity. These are operational choices, not measured production capacity.
 
-**Stretch feature declared before implementation:** Per-creator limits, using the existing starter key function. A non-blank string `creator_id` is the key; other requests fall back to their address. Separate writers at one address can use separate budgets, but changing an unauthenticated creator ID bypasses the per-creator limit. In-memory counters reset on restart and are not shared across workers.
+**Declared stretch feature:** Per-creator limits use the existing starter key function. A non-blank string `creator_id` is the key; otherwise requests count against their address. This separates writers at a shared address, but an unauthenticated creator ID can be rotated. In-memory counts reset on restart and are not shared across workers.
 
-**The run of status codes when I pushed past it:**
+**Recorded flood:** The model was warmed before the burst. `run_attacks.py::run_flood` returned:
 
 ```text
 200 200 200 200 200 200 200 200 200 200 429 429 429 429 429
 ```
 
-The detector was warmed before this 15-request burst. Five rejections were recorded; the complete console output, server log, audit extract, and source/configuration manifest are preserved in `results/`.
+Five 429 rejections were logged. Unit tests also verified the daily cap while advancing through minute windows, creator separation, and address fallback.
 
----
+Decisions contain all nine required fields. Validation refusals, short-text failures, model unavailability, and limiter refusals leave rejection entries; rejections have fewer fields because no decision exists. Appeals append `under_review` events without overwriting decisions.
 
-## Attack Run — Before
+Each phase used a fresh service process with limiting enabled. No counter reset occurred inside either attack run. Evaluation requests used a unique creator per phase, criterion, trial, and sample, preventing unrelated rate limits from replacing the intended tests.
 
-<!-- Every attack with its outcome and a held-or-broke mark.
-     `run_attacks.py --label before` produces the table. -->
+## Attack Run - Before
 
+**All 56 staff inputs were attempted, with no skipped rows or crashes: 42 HELD, 14 BROKE.** The CSV contains 12 flood rows even though their target description says 20; every supplied row was run, and none was invented.
 
+**Verdict rules:** An evasion breaks the check when its successful response avoids the AI label, including `unsure`. A false-positive example breaks it only when accused as AI. Controls, punctuation-only, repeated-word, and emoji junk break it when accepted for an authorship decision. Arabic is legitimate writing; its high-confidence accusation, rather than acceptance of its script, is the failure. Injection cases check normal scoring, fixed labels, and one intact decision log entry. Flood requests are allowed within the budget and rejected above it.
 
-**Ten audit log entries from the run**
+Raw responses are preserved separately from the reviewed verdicts: [baseline review](results/reviewed_attacks_before.md), [baseline raw results](results/attack_run_2026-11-11_023909_574078_before.json).
 
-<!-- Choose entries that show the interesting failures, not the ten easiest. -->
+The following table includes every supplied attack, with both phases side by side. Scores are unchanged between phases.
+
+| ID | Family | Before status / guess | Score | Before | After status / guess | After |
+|---|---|---|---|---|---|---|
+| EV01 | evasion | 200 / unsure | 0.2553 | BROKE | 200 / unsure | BROKE |
+| EV02 | evasion | 200 / unsure | 0.534 | BROKE | 200 / unsure | BROKE |
+| EV03 | evasion | 200 / unsure | 0.63 | BROKE | 200 / unsure | BROKE |
+| EV04 | evasion | 200 / unsure | 0.6116 | BROKE | 200 / unsure | BROKE |
+| EV05 | evasion | 200 / unsure | 0.3331 | BROKE | 200 / unsure | BROKE |
+| EV06 | evasion | 200 / unsure | 0.5269 | BROKE | 200 / unsure | BROKE |
+| EV07 | evasion | 200 / unsure | 0.5672 | BROKE | 200 / unsure | BROKE |
+| EV08 | evasion | 200 / unsure | 0.3008 | BROKE | 200 / unsure | BROKE |
+| EV09 | evasion | 200 / unsure | 0.6592 | BROKE | 200 / unsure | BROKE |
+| EV10 | evasion | 200 / ai | 0.9273 | HELD | 200 / ai | HELD |
+| FP01 | false_positive | 200 / unsure | 0.5991 | HELD | 200 / unsure | HELD |
+| FP02 | false_positive | 200 / unsure | 0.7177 | HELD | 200 / unsure | HELD |
+| FP03 | false_positive | 200 / unsure | 0.7619 | HELD | 200 / unsure | HELD |
+| FP04 | false_positive | 200 / unsure | 0.7733 | HELD | 200 / unsure | HELD |
+| FP05 | false_positive | 200 / unsure | 0.7682 | HELD | 200 / unsure | HELD |
+| FP06 | false_positive | 200 / unsure | 0.8037 | HELD | 200 / unsure | HELD |
+| FP07 | false_positive | 200 / unsure | 0.7967 | HELD | 200 / unsure | HELD |
+| FP08 | false_positive | 200 / unsure | 0.3208 | HELD | 200 / unsure | HELD |
+| PI01 | prompt_injection | 200 / unsure | 0.4457 | HELD | 200 / unsure | HELD |
+| PI02 | prompt_injection | 200 / unsure | 0.2343 | HELD | 200 / unsure | HELD |
+| PI03 | prompt_injection | 200 / unsure | 0.5846 | HELD | 200 / unsure | HELD |
+| PI04 | prompt_injection | 200 / unsure | 0.5046 | HELD | 200 / unsure | HELD |
+| PI05 | prompt_injection | 200 / unsure | 0.5996 | HELD | 200 / unsure | HELD |
+| PI06 | prompt_injection | 200 / unsure | 0.5529 | HELD | 200 / unsure | HELD |
+| MF01 | malformed | 400 / - | - | HELD | 400 / - | HELD |
+| MF02 | malformed | 400 / - | - | HELD | 400 / - | HELD |
+| MF03 | malformed | 200 / human | 0.1 | BROKE | 200 / human | BROKE |
+| MF04 | malformed | 200 / human | 0.149 | BROKE | 200 / human | BROKE |
+| MF05 | malformed | 200 / ai | 0.8981 | BROKE | 200 / ai | BROKE |
+| MF06 | malformed | 200 / ai | 0.9575 | BROKE | 200 / ai | BROKE |
+| MF07 | malformed | 200 / ai | 0.8804 | BROKE | 200 / unsure | HELD |
+| MF08 | malformed | 400 / - | - | HELD | 400 / - | HELD |
+| RQ01 | malformed | 400 / - | - | HELD | 400 / - | HELD |
+| RQ02 | malformed | 400 / - | - | HELD | 400 / - | HELD |
+| RQ03 | malformed | 400 / - | - | HELD | 400 / - | HELD |
+| RQ04 | malformed | 400 / - | - | HELD | 400 / - | HELD |
+| RQ05 | malformed | 400 / - | - | HELD | 400 / - | HELD |
+| RQ06 | malformed | 400 / - | - | HELD | 400 / - | HELD |
+| RQ07 | malformed | 400 / - | - | HELD | 400 / - | HELD |
+| RQ08 | malformed | 400 / - | - | HELD | 400 / - | HELD |
+| RQ09 | malformed | 400 / - | - | HELD | 400 / - | HELD |
+| RQ10 | malformed | 400 / - | - | HELD | 400 / - | HELD |
+| RQ11 | malformed | 400 / - | - | HELD | 400 / - | HELD |
+| RQ12 | malformed | 400 / - | - | HELD | 400 / - | HELD |
+| FL01_01 | flood_same_creator | 200 / human | 0.1139 | HELD | 200 / human | HELD |
+| FL01_02 | flood_same_creator | 200 / human | 0.1139 | HELD | 200 / human | HELD |
+| FL01_03 | flood_same_creator | 200 / human | 0.1139 | HELD | 200 / human | HELD |
+| FL01_04 | flood_same_creator | 200 / human | 0.1139 | HELD | 200 / human | HELD |
+| FL01_05 | flood_same_creator | 200 / human | 0.1139 | HELD | 200 / human | HELD |
+| FL01_06 | flood_same_creator | 200 / human | 0.1139 | HELD | 200 / human | HELD |
+| FL01_07 | flood_same_creator | 200 / human | 0.1139 | HELD | 200 / human | HELD |
+| FL01_08 | flood_same_creator | 200 / human | 0.1139 | HELD | 200 / human | HELD |
+| FL01_09 | flood_same_creator | 200 / human | 0.1139 | HELD | 200 / human | HELD |
+| FL01_10 | flood_same_creator | 200 / human | 0.1139 | HELD | 200 / human | HELD |
+| FL01_11 | flood_same_creator | 429 / - | - | HELD | 429 / - | HELD |
+| FL01_12 | flood_same_creator | 429 / - | - | HELD | 429 / - | HELD |
+
+**Ten exact audit entries from the baseline attack run, including a rejection:**
 
 ```json
-
+[
+  {
+    "timestamp": "2026-11-11T07:39:03+00:00",
+    "content_id": "3b39adb5-a122-4710-b7e8-32affeff3a43",
+    "creator_id": "attacker_EV01",
+    "guess": "unsure",
+    "model_score": 0.1635,
+    "style_score": 0.6226,
+    "combined_score": 0.2553,
+    "label": "We can't tell reliably how this writing was created. You can appeal this assessment.",
+    "status": "decided"
+  },
+  {
+    "timestamp": "2026-11-11T07:39:03+00:00",
+    "content_id": "66d793f8-d31c-435b-9428-e4db432959d4",
+    "creator_id": "attacker_EV02",
+    "guess": "unsure",
+    "model_score": 0.5943,
+    "style_score": 0.2927,
+    "combined_score": 0.534,
+    "label": "We can't tell reliably how this writing was created. You can appeal this assessment.",
+    "status": "decided"
+  },
+  {
+    "timestamp": "2026-11-11T07:39:04+00:00",
+    "content_id": "38523cf2-2f96-49d7-a541-5e9e864495b5",
+    "creator_id": "attacker_EV07",
+    "guess": "unsure",
+    "model_score": 0.5862,
+    "style_score": 0.4913,
+    "combined_score": 0.5672,
+    "label": "We can't tell reliably how this writing was created. You can appeal this assessment.",
+    "status": "decided"
+  },
+  {
+    "timestamp": "2026-11-11T07:39:05+00:00",
+    "content_id": "88ef11fb-61d7-4397-9507-d795ce0979c1",
+    "creator_id": "attacker_FP03",
+    "guess": "unsure",
+    "model_score": 0.8051,
+    "style_score": 0.5893,
+    "combined_score": 0.7619,
+    "label": "We can't tell reliably how this writing was created. You can appeal this assessment.",
+    "status": "decided"
+  },
+  {
+    "timestamp": "2026-11-11T07:39:07+00:00",
+    "content_id": "b6aa2703-9597-43c4-a691-c5a6ee6a9843",
+    "creator_id": "attacker_PI05",
+    "guess": "unsure",
+    "model_score": 0.6401,
+    "style_score": 0.4377,
+    "combined_score": 0.5996,
+    "label": "We can't tell reliably how this writing was created. You can appeal this assessment.",
+    "status": "decided"
+  },
+  {
+    "timestamp": "2026-11-11T07:39:07+00:00",
+    "content_id": "cd6a68c5-5e83-4c47-8376-5e6f37916cd8",
+    "creator_id": "attacker_MF03",
+    "guess": "human",
+    "model_score": 0.0,
+    "style_score": 0.5,
+    "combined_score": 0.1,
+    "label": "This writing appears more likely to have been written by a person, but the estimate may be wrong.",
+    "status": "decided"
+  },
+  {
+    "timestamp": "2026-11-11T07:39:07+00:00",
+    "content_id": "1275691e-08fb-42d8-9658-dad76c11820a",
+    "creator_id": "attacker_MF04",
+    "guess": "human",
+    "model_score": 0.0112,
+    "style_score": 0.7,
+    "combined_score": 0.149,
+    "label": "This writing appears more likely to have been written by a person, but the estimate may be wrong.",
+    "status": "decided"
+  },
+  {
+    "timestamp": "2026-11-11T07:39:08+00:00",
+    "content_id": "5379bd24-7a76-42db-8071-d1e217a1957c",
+    "creator_id": "attacker_MF06",
+    "guess": "ai",
+    "model_score": 0.9969,
+    "style_score": 0.8,
+    "combined_score": 0.9575,
+    "label": "This writing may have been generated by AI. This is an estimate and can be appealed.",
+    "status": "decided"
+  },
+  {
+    "timestamp": "2026-11-11T07:39:08+00:00",
+    "content_id": "0d528a9d-7ebb-4eec-9dfa-ed90e32be857",
+    "creator_id": "attacker_MF07",
+    "guess": "ai",
+    "model_score": 0.9064,
+    "style_score": 0.7762,
+    "combined_score": 0.8804,
+    "label": "This writing may have been generated by AI. This is an estimate and can be appealed.",
+    "status": "decided"
+  },
+  {
+    "timestamp": "2026-11-11T07:39:09+00:00",
+    "creator_id": "attacker_flood",
+    "event": "rejected",
+    "status": "rejected",
+    "reason": "rate_limited",
+    "limit": "10 per 1 minute"
+  }
+]
 ```
 
-**The single worst outcome** — the one I'd least want to explain to a writer
-whose work got caught by it:
-
-
-
----
+**Single worst attack outcome:** MF07 accepted Arabic writing and accused it of being AI at 0.8804. Its model score was 0.9064 and style score 0.7762. The English-oriented model and ASCII-only word tokenizer do not establish authorship in Arabic, yet their weighted score produced a confident accusation.
 
 ## Run Log and Verdicts
 
-<!-- Your five criteria across three trials. `run_eval.py --label before`. -->
+This personal project uses ten varied reference fixtures, including two plain ones, and ten structured comparison fixtures. Their origin does not establish personal authorship. The original criteria are preserved: criteria 1 and 2 remain **NOT EVALUATED** as authorship claims, while their numeric fixture measurements are shown separately. They are not silently marked MET.
+
+The corpus was frozen before the baseline evaluation and reused byte-for-byte afterward. Each criterion has three recorded trials in each phase. Matching results are expected from the deterministic model in evaluation mode and deterministic text statistics.
+
+### Before
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |
+| 1. False positives on my writing | at most 1 of 10 ai guesses | 0/10 flags (fixture metric) | 0/10 flags (fixture metric) | 0/10 flags (fixture metric) | NOT EVALUATED |
+| 2. Score separation | comparison mean minus reference mean >= 0.15 | gap 0.2327 (fixture metric) | gap 0.2327 (fixture metric) | gap 0.2327 (fixture metric) | NOT EVALUATED |
+| 3. All three labels are reachable | 3 guesses; exact labels and score ranges | 3/3 labels; match=True | 3/3 labels; match=True | 3/3 labels; match=True | MET |
+| 4. Appeals are recorded and put under review | 5/5 recorded appeals and original decisions | 5/5 | 5/5 | 5/5 | MET |
+| 5. Invalid submission input is rejected | 5/5 HTTP 400 invalid_input, no decision entry | 5/5 | 5/5 | 5/5 | MET |
 
-**Real output from one trial**, pasted as text, naming the file and function
-that produced it:
+
+### After
+
+| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
+|---|---|---|---|---|---|
+| 1. False positives on my writing | at most 1 of 10 ai guesses | 0/10 flags (fixture metric) | 0/10 flags (fixture metric) | 0/10 flags (fixture metric) | NOT EVALUATED |
+| 2. Score separation | comparison mean minus reference mean >= 0.15 | gap 0.2327 (fixture metric) | gap 0.2327 (fixture metric) | gap 0.2327 (fixture metric) | NOT EVALUATED |
+| 3. All three labels are reachable | 3 guesses; exact labels and score ranges | 2/3 labels; match=True | 2/3 labels; match=True | 2/3 labels; match=True | MISSED |
+| 4. Appeals are recorded and put under review | 5/5 recorded appeals and original decisions | 5/5 | 5/5 | 5/5 | MET |
+| 5. Invalid submission input is rejected | 5/5 HTTP 400 invalid_input, no decision entry | 5/5 | 5/5 | 5/5 | MET |
+
+
+Complete requests, responses, content IDs, and relevant audit entries: [before evidence](results/run_20261111T074453326254Z_before.json) and [after evidence](results/run_20261111T074758947317Z_after.json). Produced by `run_eval.py::main`, `run_trial`, and `measure`.
+
+**Real output from trial 1 for each criterion, before and after:**
+
+**Criterion 1: False positives on my writing**
 
 ```json
-
+{
+  "before": {
+    "ai_flags_on_reference_fixtures": 0,
+    "total": 10,
+    "passed": true
+  },
+  "after": {
+    "ai_flags_on_reference_fixtures": 0,
+    "total": 10,
+    "passed": true
+  }
+}
 ```
 
-**Diagnoses**
+One actual baseline request and response (the linked evidence contains the full trial):
 
-<!-- For each miss AND each broken attack: the stage and the mechanism.
+```json
+{
+  "method": "POST",
+  "endpoint": "/submit",
+  "request": {
+    "text": "I went to the shop after work. It was raining, so I took my old coat. I bought bread and milk, then walked home. The bread was still warm when I put it on the table.",
+    "creator_id": "eval_d01c4a4b38_c1_t1_1"
+  },
+  "status": 200,
+  "response": {
+    "confidence": 0.759,
+    "content_id": "96cedbf1-c29d-4469-8e28-78a5252e4858",
+    "guess": "unsure",
+    "label": "We can't tell reliably how this writing was created. You can appeal this assessment.",
+    "model_score": 0.8058,
+    "style_score": 0.5718
+  },
+  "sample_id": "R01"
+}
+```
 
-     Your service has five stages: the route, signal one, signal two, the
-     combining rule, and the label mapping.
+**Criterion 2: Score separation**
 
-     Not a diagnosis:  "The evasion attacks got through."
-     A diagnosis:      "Four evasion inputs got through. All four had typos
-                        added to AI-generated text. My second signal measures
-                        word variety, and typos raise word variety — so it read
-                        them as more human. My combining rule weights that
-                        signal at 0.6, so it dragged the whole score down."
+```json
+{
+  "before": {
+    "reference_mean": 0.39535,
+    "comparison_mean": 0.62803,
+    "gap": 0.23268,
+    "passed": true
+  },
+  "after": {
+    "reference_mean": 0.39535,
+    "comparison_mean": 0.62803,
+    "gap": 0.23268,
+    "passed": true
+  }
+}
+```
 
-     Look for a pattern. Five failures on one signal is one problem, not five. -->
+One actual baseline request and response (the linked evidence contains the full trial):
 
+```json
+{
+  "method": "POST",
+  "endpoint": "/submit",
+  "request": {
+    "text": "I went to the shop after work. It was raining, so I took my old coat. I bought bread and milk, then walked home. The bread was still warm when I put it on the table.",
+    "creator_id": "eval_d01c4a4b38_c2_t1_1"
+  },
+  "status": 200,
+  "response": {
+    "confidence": 0.759,
+    "content_id": "f249c981-40d3-40e1-873a-65403718ecd0",
+    "guess": "unsure",
+    "label": "We can't tell reliably how this writing was created. You can appeal this assessment.",
+    "model_score": 0.8058,
+    "style_score": 0.5718
+  },
+  "sample_id": "R01"
+}
+```
 
+**Criterion 3: All three labels are reachable**
 
----
+```json
+{
+  "before": {
+    "guesses": [
+      "ai",
+      "human",
+      "unsure"
+    ],
+    "label_and_range_match": true,
+    "passed": true
+  },
+  "after": {
+    "guesses": [
+      "human",
+      "unsure"
+    ],
+    "label_and_range_match": true,
+    "passed": false
+  }
+}
+```
+
+One actual baseline request and response (the linked evidence contains the full trial):
+
+```json
+{
+  "method": "POST",
+  "endpoint": "/submit",
+  "request": {
+    "text": "I went to the shop after work. It was raining, so I took my old coat. I bought bread and milk, then walked home. The bread was still warm when I put it on the table.",
+    "creator_id": "eval_d01c4a4b38_c3_t1_1"
+  },
+  "status": 200,
+  "response": {
+    "confidence": 0.759,
+    "content_id": "cb9f05fb-dc6d-491b-8c8b-6df5d0525951",
+    "guess": "unsure",
+    "label": "We can't tell reliably how this writing was created. You can appeal this assessment.",
+    "model_score": 0.8058,
+    "style_score": 0.5718
+  },
+  "sample_id": "R01"
+}
+```
+
+**Criterion 4: Appeals are recorded and put under review**
+
+```json
+{
+  "before": {
+    "recorded_appeals": 5,
+    "total": 5,
+    "passed": true
+  },
+  "after": {
+    "recorded_appeals": 5,
+    "total": 5,
+    "passed": true
+  }
+}
+```
+
+One actual baseline request and response (the linked evidence contains the full trial):
+
+```json
+{
+  "method": "POST",
+  "endpoint": "/submit",
+  "request": {
+    "text": "I went to the shop after work. It was raining, so I took my old coat. I bought bread and milk, then walked home. The bread was still warm when I put it on the table.",
+    "creator_id": "eval_d01c4a4b38_c4_t1_1"
+  },
+  "status": 200,
+  "response": {
+    "confidence": 0.759,
+    "content_id": "874f45c5-68b3-4a09-9cd5-c8488470908a",
+    "guess": "unsure",
+    "label": "We can't tell reliably how this writing was created. You can appeal this assessment.",
+    "model_score": 0.8058,
+    "style_score": 0.5718
+  },
+  "sample_id": "R01"
+}
+```
+
+**Criterion 5: Invalid submission input is rejected**
+
+```json
+{
+  "before": {
+    "accepted_checks": 5,
+    "total": 5,
+    "passed": true
+  },
+  "after": {
+    "accepted_checks": 5,
+    "total": 5,
+    "passed": true
+  }
+}
+```
+
+One actual baseline request and response (the linked evidence contains the full trial):
+
+```json
+{
+  "method": "POST",
+  "endpoint": "/submit",
+  "request": {
+    "creator_id": "eval_d01c4a4b38_c5_t1_1"
+  },
+  "status": 400,
+  "response": {
+    "error": "invalid_input",
+    "message": "text must be a non-blank string of at most 10000 characters."
+  },
+  "sample_id": "bad_1"
+}
+```
+
+### Diagnoses and verdict reasoning
+
+- Criteria 1 and 2: the route and scores were exercised, but the personal-authorship prerequisite was not established. All three fixture trials had 0/10 reference AI flags and a score gap of 0.23268 (reference mean 0.39535, comparison mean 0.62803). These measurements do not resolve the original authorship claims.
+- Criterion 3: MET before because all three guesses and exact label/range matches occurred in all trials. MISSED after: only human and unsure remained in the frozen set, although every returned label still matched its range. The stage is label mapping; moving the cutoff above L02 at 0.8895 removes the only AI result from that set.
+- Criterion 4: MET in both phases. Every trial recorded all five appeals with the exact reason, retained the original decision, and placed the matching item under review.
+- Criterion 5: MET in both phases. Every trial returned five HTTP 400 invalid_input responses, wrote rejection events, and created no decision for those requests.
+
+Every broken baseline attack is diagnosed below; the same explanations apply to the unchanged failures after the improvement:
+
+| Attack | Stage | Mechanism |
+|---|---|---|
+| EV01 | signal one / combining rule | Typos lower model score to 0.1635 while style stays at 0.6226; the 0.8 model weight pulls the result to 0.2553. |
+| EV02 | signal two / combining rule | Broken-up sentences lower the style score to 0.2927; the weighted score stays inside the unsure band. |
+| EV03 | signal two / combining rule | The pasted quotation changes surface counts; both reported signals remain below the AI-label cutoff. |
+| EV04 | signal one | Unusual words increase perplexity; predictability is not a reliable authorship test, so the score stays below the AI cutoff. |
+| EV05 | both signals | Heavy editing lowers both signals, and their weighted mean remains unsure. |
+| EV06 | signal two | Unequal sentence lengths lower the variation component; the result does not cross the AI-label threshold. |
+| EV07 | signal two | Added punctuation lowers the punctuation component without establishing a different author; the combined result is unsure. |
+| EV08 | signal one / route | The short input still contains enough tokens to pass validation; its score of 0.3008 is unsure, not an AI flag. |
+| EV09 | both signals / combining rule | The added opening alters both predictability and surface statistics; the combined result is below the AI cutoff. |
+| MF03 | route | The string passes the length/token checks despite controls or non-prose content; a provenance decision is made without a suitable writing sample. |
+| MF04 | route | The string passes the length/token checks despite controls or non-prose content; a provenance decision is made without a suitable writing sample. |
+| MF05 | route | The string passes the length/token checks despite controls or non-prose content; a provenance decision is made without a suitable writing sample. |
+| MF06 | route | The string passes the length/token checks despite controls or non-prose content; a provenance decision is made without a suitable writing sample. |
+| MF07 | signal two / signal one | Arabic text has no words under the ASCII-only tokenizer; style rises to 0.7762, and GPT-2 gives 0.9064. Their mean becomes a confident AI accusation without validated language support. |
+
+The strongest repeated patterns are evasion inputs exploiting predictability/surface statistics, and validation admitting non-prose strings. The model is a perplexity scorer, not an instruction-following reviewer: the injection strings were treated as content, and fixed labels and JSON log serialization held. These observations are limited to this attack set.
 
 ## The Improvement
 
-**What I changed:**
+**One behavior change:** Raise only `AI_THRESHOLD` from 0.85 to 0.8896. The model, style signal, weights (0.8/0.2), human cutoff (0.15), validation, label sentences, and limiter are unchanged.
 
-**Which diagnosis pointed at it:**
+**Selection:** The human-written historical reference L02 scored 0.8895, higher than all eight staff false-positive examples. The new cutoff is one four-decimal increment above that confirmed-human calibration maximum. Because the reference fixtures do not verify personal authorship, they were excluded from this calibration pool. The diagnosis and exact value were committed before the after runs; see [baseline diagnosis](results/baseline_diagnosis.md). This tunes observed examples and provides no unseen-data accuracy estimate.
 
-### Attack Run — After
+### Attack Run - After
 
-<!-- Same format. `run_attacks.py --label after` -->
+**All 56 rows were rerun: 43 HELD, 13 BROKE; no crashes.** MF07 changed from AI to unsure. All other attack statuses, guesses, and verdicts were unchanged. All model, style, and combined scores were identical across the attack runs.
 
+[After review](results/reviewed_attacks_after.md) and [after raw responses](results/attack_run_2026-11-11_024731_610624_after.json).
 
+| Measure | Before | After |
+|---|---|---|
+| Staff attacks held | 42/56 | 43/56 |
+| Staff attacks broken | 14/56 | 13/56 |
+| Evasions avoiding the AI label | 9/10 | 9/10 |
+| Staff false-positive examples accused | 0/8 | 0/8 |
+| Arabic attack MF07 | AI, 0.8804 | unsure, 0.8804 |
+| Historical human control L02 | AI, 0.8895 | unsure, 0.8895 |
+| Criterion 3 labels reached | 3/3 in every trial | 2/3 in every trial |
+| Appeal and invalid-input targets | MET | MET |
 
-**Did it help, and how do I know:**
-
-<!-- Widening the unsure band usually fixes one problem and creates another.
-     Reporting that trade honestly is worth full credit. -->
-
-
-
----
+**Did it help?** It removed the unsupported accusation on MF07 and the historical human control, while causing the label-coverage criterion to miss. The supplied evasion outcomes did not change; no additional AI detection benefit is claimed.
 
 ## What's Still Broken
 
-<!-- For each attack still getting through and each criterion still missed:
-     what you'd do, and why you stopped. -->
+- EV01-EV09 still avoid the AI label. Next, measure the effect of the specific typo, sentence, punctuation, and opening edits against matched controls before considering another signal or weight change. Those were deferred to keep this one-change experiment interpretable.
+- MF03-MF06 still receive authorship decisions on control characters, punctuation-only text, a repeated single word, or emoji. Next, add a supported-writing/input-quality gate and test legitimate edge cases; validation was deliberately not changed alongside the threshold.
+- Criterion 3 now misses on the frozen set. Keep that honest result; assess a new, separately versioned coverage set to distinguish sample coverage from global label reachability. Do not replace the original examples to repair this verdict.
+- The original personal-writing conditions in criteria 1 and 2 remain unverified. A new experiment with documented personal pieces is needed to evaluate those authorship claims; the present fixture results exercise scoring behavior only.
+- Per-creator limits can be bypassed by changing IDs, and the counters reset with the process. Authentication and shared persistent limiter storage would be needed for real deployment. Both are outside this local experiment.
+- MF07 now receives unsure, but the system still lacks validated multilingual authorship support. A threshold change does not fix either signal's language limitations.
 
+**The production trade:** I would favor fewer accusations against real writers, accepting that more AI text would receive unsure and require moderation. The site and its reviewers would bear that extra work rather than make writers bear unsupported accusations.
 
+### Reproducing the experiments
 
-**The trade I'd make if this ran for real:**
+With the virtual environment active and no service already on port 5000:
 
-<!-- Two sentences. Fewer wrong accusations means more AI text getting through.
-     Say which way you'd go and WHO PAYS FOR IT. -->
+```text
+python test.py
+python -m unittest discover -s tests -v
+python run_experiment.py flood --label before
+python run_experiment.py attacks --set attack_set/attack_set --label after
+python run_experiment.py criteria --label after
+python verify_experiments.py
+```
 
+The final checkout uses the after cutoff. To reproduce the original baseline, use the committed baseline revision before the threshold change in a separate checkout; a `before` label alone does not change service settings. Every run manifest records the actual configuration, source hashes, package versions, corpus hashes, and its exact audit range. Existing raw experiment files are not overwritten.
 
-
-<!-- ═════════════════════════════════════════════════════════════════════
-
-     SUBMISSION CHECKLIST — unit 7
-
-       [ ] criteria.md has five numbered criteria, each naming a target
-       [ ] Each has a reason underneath
-       [ ] POST /submit returns content_id, guess, confidence, label,
-           model_score and style_score
-       [ ] Two signals that measure DIFFERENT things, each with a named blind spot
-       [ ] Three label variants, all reachable, written out in full
-       [ ] POST /appeal changes status and writes to the log
-       [ ] Signals and Scoring names scoring.py::combine_signals
-       [ ] Sample Run: a submission AND an appeal, as pasted text
-       [ ] At least four new commits
-       [ ] Repository URL submitted — WRITE IT DOWN
-
-     SUBMISSION CHECKLIST — unit 8
-
-       [ ] Rate limiting on /submit, with your numbers justified
-       [ ] The pasted run of status codes showing 429
-       [ ] Audit log with all nine fields, recording rejections too
-       [ ] The attack set run IN FULL, every input with an outcome
-       [ ] Ten audit log entries pasted as text
-       [ ] Five criteria across three trials
-       [ ] A diagnosis for every miss and every broken attack — stage AND mechanism
-       [ ] One improvement, with Attack Run — After
-       [ ] What's Still Broken, including the production trade
-       [ ] At least four new commits
-       [ ] The SAME repository URL as last unit
-
-     Do not delete and recreate this repository.
-     ═════════════════════════════════════════════════════════════════════ -->
-
----
-
-📖 **How to run this project: [RUNNING.md](RUNNING.md)**
+The same repository is used throughout. Results and audit history are committed. Course-portal submission remains manual.
