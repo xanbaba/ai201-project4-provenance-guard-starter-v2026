@@ -1,0 +1,107 @@
+{
+  "provenance": {
+    "reference": "Writing-style test fixtures; personal authorship has not been independently verified.",
+    "comparison": "Structured explanatory test fixtures.",
+    "plain_reference_ids": [
+      "R01",
+      "R02"
+    ],
+    "original_personal_writing_requirement_satisfied": false
+  },
+  "reference": [
+    {
+      "id": "R01",
+      "text": "I went to the shop after work. It was raining, so I took my old coat. I bought bread and milk, then walked home. The bread was still warm when I put it on the table."
+    },
+    {
+      "id": "R02",
+      "text": "My brother called this morning. He asked if I could help him move a table on Saturday. I said yes. We will borrow a van from his friend and bring the table to his new flat."
+    },
+    {
+      "id": "R03",
+      "text": "The tomato plant finally leaned far enough to knock the blue mug off the windowsill. Nothing broke. I swept the dirt into a cereal box because the dustpan had disappeared again, and now the kitchen smells faintly of wet leaves."
+    },
+    {
+      "id": "R04",
+      "text": "Dear neighbors, please leave the basement door closed this week. The latch does not catch unless you pull it toward you. I have asked the building manager to repair it, but until then a gentle tug should keep the wind from opening it."
+    },
+    {
+      "id": "R05",
+      "text": "I thought the missing semicolon would be the whole problem. It wasn't. The loop kept one stale value between requests, and by lunchtime I had a page of arrows explaining why the third click behaved differently from the first."
+    },
+    {
+      "id": "R06",
+      "text": "At the edge of the platform, somebody had planted a spoon in the snow. Handle down. Its little silver bowl held a cloudy reflection of the station roof, and for a moment the late train seemed less urgent than finding out who had left it there."
+    },
+    {
+      "id": "R07",
+      "text": "The soup needed something sharp. I tried lemon first, then a spoonful of the liquid from the pickle jar. That was better, though I wouldn't put it in a recipe without warning people. Dinner was late enough already."
+    },
+    {
+      "id": "R08",
+      "text": "The committee met at six and finished at eight. We agreed to repair the north fence before replacing the benches. I objected to the proposed order because the loose boards are beside the children's path; the minutes should include that concern."
+    },
+    {
+      "id": "R09",
+      "text": "Does a library need to be quiet everywhere? I like the noisy room downstairs, especially when the chess group is there. Upstairs is different. If we try to make every room serve the same purpose, both kinds of reader lose something."
+    },
+    {
+      "id": "R10",
+      "text": "We took the wrong path above the quarry and found the old water tank instead. A wren was shouting from the fence. My boots filled with burrs, the map tore at its wet fold, and somehow that detour became the part of the walk we kept talking about."
+    }
+  ],
+  "comparison": [
+    {
+      "id": "C01",
+      "text": "Effective time management is an important skill that can support success in both personal and professional settings. By establishing clear priorities, individuals can allocate their time more efficiently. Regular reflection and consistent planning can further contribute to positive outcomes."
+    },
+    {
+      "id": "C02",
+      "text": "Community gardens offer a range of benefits for local residents. They provide opportunities for social connection, promote access to fresh produce, and encourage sustainable practices. With thoughtful planning and ongoing cooperation, these spaces can become valuable resources for the wider community."
+    },
+    {
+      "id": "C03",
+      "text": "Clear communication plays an essential role in collaborative work. Team members benefit from shared expectations, timely feedback, and accessible information. By maintaining open channels of communication, organizations can improve coordination and support more effective decision making."
+    },
+    {
+      "id": "C04",
+      "text": "A balanced approach to technology adoption requires careful consideration of both opportunities and challenges. New tools can improve efficiency and expand access to information. At the same time, appropriate oversight helps ensure that these tools are used responsibly and effectively."
+    },
+    {
+      "id": "C05",
+      "text": "Public libraries provide important services to people of all ages. In addition to lending books, they offer educational programs, digital resources, and welcoming public spaces. Continued investment in these services can help strengthen communities and support lifelong learning."
+    },
+    {
+      "id": "C06",
+      "text": "Regular physical activity can contribute to overall well-being. A consistent routine may support energy levels, improve mood, and encourage healthy habits. Choosing accessible activities and setting realistic goals can make it easier to maintain that routine over time."
+    },
+    {
+      "id": "C07",
+      "text": "Successful project planning begins with a clear understanding of the desired outcome. Teams should identify key tasks, allocate available resources, and establish realistic timelines. Monitoring progress throughout the process can help address challenges and keep the project aligned with its objectives."
+    },
+    {
+      "id": "C08",
+      "text": "Environmental sustainability involves making decisions that consider both present needs and future consequences. Reducing waste, conserving resources, and supporting efficient systems are useful starting points. Meaningful progress often depends on cooperation among individuals, institutions, and communities."
+    },
+    {
+      "id": "C09",
+      "text": "Online learning offers flexibility and access to a wide range of educational materials. Students can benefit from clear course structures, regular feedback, and opportunities for interaction. Thoughtful instructional design helps create a supportive and engaging learning environment."
+    },
+    {
+      "id": "C10",
+      "text": "Customer feedback can provide valuable information about a product or service. Collecting feedback consistently allows teams to identify common concerns and recognize areas of strength. Using these insights to guide improvements can support a better overall experience."
+    }
+  ],
+  "coverage_extra": [
+    {
+      "id": "L01",
+      "source": "Artificial rare-word reachability probe",
+      "text": "xylophonic quizzaciousness! flibbertigibbetry. mnemonically disestablishmentarianism; quasiperiodicity, hyperdimensionality, electroencephalography. Unfathomability?"
+    },
+    {
+      "id": "L02",
+      "source": "Declaration of Independence excerpt; historical human-written reference",
+      "text": "We hold these truths to be self-evident, that all men are created equal, that they are endowed by their Creator with certain unalienable Rights, that among these are Life, Liberty and the pursuit of Happiness."
+    }
+  ]
+}

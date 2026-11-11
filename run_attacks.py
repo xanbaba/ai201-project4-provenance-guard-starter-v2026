@@ -473,7 +473,8 @@ def main():
         status, payload, error = send(args.url, attack, args.timeout)
         verdict, note = auto_verdict(status, payload, error)
 
-        payload = payload or {}
+        raw_response = payload
+        payload = payload if isinstance(payload, dict) else {}
         row = {
             "id": attack["id"],
             "family": attack["family"],
@@ -493,6 +494,7 @@ def main():
             "error": error,
             "verdict": verdict,
             "note": note,
+            "response": raw_response,
         }
         rows.append(row)
 
@@ -505,7 +507,7 @@ def main():
 
 def write_report(rows, args):
     config.RESULTS_DIR.mkdir(exist_ok=True)
-    stamp = dt.datetime.now().strftime("%Y-%m-%d_%H%M")
+    stamp = dt.datetime.now().strftime("%Y-%m-%d_%H%M%S_%f")
     label = f"_{args.label}" if args.label else ""
     path = config.RESULTS_DIR / f"attack_run_{stamp}{label}.md"
 
@@ -582,6 +584,9 @@ def write_report(rows, args):
         ]
 
     path.write_text("\n".join(lines), encoding="utf-8")
+    path.with_suffix('.json').write_text(json.dumps({
+        "label": args.label, "attack_folder": str(args.folder), "rows": rows,
+    }, indent=2, ensure_ascii=False), encoding="utf-8")
 
     print(f"\n{'=' * 60}")
     print(f"Wrote {path.relative_to(config.ROOT)}")
