@@ -68,7 +68,7 @@ WEIGHT_STYLE_SIGNAL = 0.2
 # that decide who pays for it.
 
 HUMAN_THRESHOLD = 0.15
-AI_THRESHOLD = 0.85
+AI_THRESHOLD = 0.8896
 
 # Enabled for Unit 8; the environment override supports isolated contract tests.
 

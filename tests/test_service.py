@@ -90,7 +90,7 @@ class ServiceTests(unittest.TestCase):
 
     def test_label_boundaries_and_style_edge_cases(self):
         for score, guess in [(0, 'human'), (.15, 'human'), (.1501, 'unsure'), (.51, 'unsure'),
-                             (.8499, 'unsure'), (.85, 'ai'), (.95, 'ai'), (1, 'ai')]:
+                             (.85, 'unsure'), (.8895, 'unsure'), (.8896, 'ai'), (.95, 'ai'), (1, 'ai')]:
             self.assertEqual(scoring.score_to_label(score)[0], guess)
         for text in ('', 'One sentence.', 'One. Two very different sentences!'):
             self.assertTrue(0 <= stylometry.style_signal(text) <= 1)
