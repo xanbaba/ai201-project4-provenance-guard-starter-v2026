@@ -1,0 +1,16 @@
+Criterion 1, trial 1: 0/10 flags (fixture metric)
+Criterion 1, trial 2: 0/10 flags (fixture metric)
+Criterion 1, trial 3: 0/10 flags (fixture metric)
+Criterion 2, trial 1: gap 0.2327 (fixture metric)
+Criterion 2, trial 2: gap 0.2327 (fixture metric)
+Criterion 2, trial 3: gap 0.2327 (fixture metric)
+Criterion 3, trial 1: 3/3 labels; match=True
+Criterion 3, trial 2: 3/3 labels; match=True
+Criterion 3, trial 3: 3/3 labels; match=True
+Criterion 4, trial 1: 5/5
+Criterion 4, trial 2: 5/5
+Criterion 4, trial 3: 5/5
+Criterion 5, trial 1: 5/5
+Criterion 5, trial 2: 5/5
+Criterion 5, trial 3: 5/5
+Wrote C:\Users\Khanbaba Fatullayev\Projects\ai201-project4-provenance-guard-starter-v2026\results\run_20261111T074453326254Z_before.json and .md

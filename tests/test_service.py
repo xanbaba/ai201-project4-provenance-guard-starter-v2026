@@ -76,6 +76,18 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(codes, [400] * 10 + [429])
         self.assertEqual(audit.read_entries()[-1]['reason'], 'rate_limited')
 
+    def test_daily_limit_across_minute_windows(self):
+        now = [2000000000.0]
+        with patch('limits.storage.memory.time.time', side_effect=lambda: now[0]), \
+                patch.object(detector, 'model_signal', return_value=.5):
+            for i in range(200):
+                if i and i % 10 == 0:
+                    now[0] += 61
+                self.assertEqual(self.client.post('/submit', json=self.body).status_code, 200)
+            now[0] += 61
+            self.assertEqual(self.client.post('/submit', json=self.body).status_code, 429)
+        self.assertEqual(audit.read_entries()[-1]['reason'], 'rate_limited')
+
     def test_label_boundaries_and_style_edge_cases(self):
         for score, guess in [(0, 'human'), (.15, 'human'), (.1501, 'unsure'), (.51, 'unsure'),
                              (.8499, 'unsure'), (.85, 'ai'), (.95, 'ai'), (1, 'ai')]:

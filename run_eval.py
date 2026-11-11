@@ -41,6 +41,7 @@ def valid_decision(record):
         return False
     numbers = [p.get(k) for k in ('confidence', 'model_score', 'style_score')]
     return (isinstance(p.get('content_id'), str) and bool(p['content_id'])
+            and isinstance(p.get('label'), str)
             and p.get('guess') in LABELS
             and all(isinstance(v, (int, float)) and not isinstance(v, bool)
                     and math.isfinite(v) and 0 <= v <= 1 for v in numbers))
@@ -60,7 +61,7 @@ def measure(scenario, records, entries, settings, audit_ok=True):
         matches = 0
         for r in records:
             creator = r['request']['creator_id']
-            p = r.get('response') or {}
+            p = r.get('response') if isinstance(r.get('response'), dict) else {}
             no_decision = not any(e.get('creator_id') == creator and e.get('guess') is not None for e in entries)
             if r['status'] == 400 and p.get('error') == 'invalid_input' and no_decision:
                 matches += 1
@@ -92,7 +93,7 @@ def measure(scenario, records, entries, settings, audit_ok=True):
         successful = 0
         for r in appeals:
             body = r['request']
-            p = r.get('response') or {}
+            p = r.get('response') if isinstance(r.get('response'), dict) else {}
             history = [e for e in entries if e.get('content_id') == body['content_id']]
             decisions_for_id = [e for e in history if e.get('status') == 'decided']
             appeal_events = [e for e in history if e.get('event') == 'appeal']
